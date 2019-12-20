@@ -60,7 +60,7 @@ function removeIP (session) {
 		shell.exec (s); 
 	}
 }
-//app.use(secure);
+
 app.use(session({
 	secret: 'secret',
 	resave: true,
@@ -71,7 +71,7 @@ app.use(bodyParser.json());
 
 app.get('/', function(request, response) {
 	if (request.session.loggedin) {
-		if (request.session.username == 'admin') {
+		if (request.session.superUser) {
 			if (request.session.ip != getIP (request)) {
 				request.session.ip = getIP (request);
 				addIP (request.session);
@@ -103,8 +103,10 @@ app.post('/auth', function(request, response) {
 	   request.session.loggedin = true;
 	   request.session.username = username;
 	   request.session.ip = getIP(request);
+	   request.session.superUser = false;
+	   if (data.includes(',,,' + username + ',,,')) request.session.superUser = true;
 	   request.session.secret = username + ':' + getIP (request);
-	   if (username != 'admin')removeIP(request.session);
+	   if (!request.session.superUser)removeIP(request.session);
 	   addIP(request.session);
 	  }
 	  response.redirect('/');
@@ -119,7 +121,7 @@ app.post('/signout', function(request, response) {
 	
 });
 app.post('/reset', function(request, response) {
-	if (request.session.username == 'admin') {
+	if (request.session.superUser) {
 		resett();
 		addIP (request.session);
 	}
@@ -127,7 +129,7 @@ app.post('/reset', function(request, response) {
 	
 });
 app.post('/register', function(request, response) {
-	if (request.session.username == 'admin') {
+	if (request.session.superUser) {
 		if (request.body.password == 'R3m0ve') {
 			removeUser(request.body.username);
 		} else {	
