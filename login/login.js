@@ -6,7 +6,7 @@ var fs = require('fs');
 var http = require('http');
 var https = require('https');
 var privateKey  = fs.readFileSync('/root/arre/login/pv.key', 'utf8');
-var certificate = fs.readFileSync('/root/arre/login/cert.cert, 'utf8');
+var certificate = fs.readFileSync('/root/arre/login/cert.cert', 'utf8');
 //var ca = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/chain.pem', 'utf8');
 
 var secure = require('express-force-https');
