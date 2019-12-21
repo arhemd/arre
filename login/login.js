@@ -5,15 +5,15 @@ var path = require('path');
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
-var privateKey  = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/privkey.pem', 'utf8');
-var certificate = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/cert.pem', 'utf8');
-var ca = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/chain.pem', 'utf8');
+var privateKey  = fs.readFileSync('/root/arre/login/pv.key', 'utf8');
+var certificate = fs.readFileSync('/root/arre/login/cert.cert, 'utf8');
+//var ca = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/chain.pem', 'utf8');
 
 var secure = require('express-force-https');
 
 var app = express();
 
-var credentials = {key: privateKey, cert: certificate, ca: ca};
+var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
 
 function getIP (request) {
@@ -21,20 +21,22 @@ function getIP (request) {
 }
 
 function removeUser (user) {
+	if (user.length == 0) return;
 	shell = require('shelljs');
 	var s = shell.exec('iptables-save | grep \"/* ' + user + ' /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
 	
-	shell.exec ('sed -i \'/,' + user + ',,/d\' /root/login/users'); 
+	shell.exec ('sed -i \'/,' + user + ',,/d\' /root/arre/login/users'); 
 
 	console.log (user + ' :REMOVED BY ADMIN');
 	
 }
 
 function addUser (user, pass) {
+	if (user.length == 0 || pass.length == 0) return;
 	shell = require('shelljs');
 	removeUser (user);
 	console.log (user + ' :ADDED BY ADMIN');
-	shell.exec ('echo \',' + user + ',,' + pass + ',\' >> /root/login/users'); 
+	shell.exec ('echo \',' + user + ',,' + pass + ',\' >> /root/arre/login/users'); 
 }
 
 
@@ -97,7 +99,8 @@ app.get('/script.js', function(request, response) {
 app.post('/auth', function(request, response) {
 	var username = request.body.username;
 	var password = request.body.password;
-	require('fs').readFile('/root/login/users', function (err, data) {
+	if (username.length == 0 || password.length == 0) return;
+	require('fs').readFile('/root/arre/login/users', function (err, data) {
 	  if (err) throw err;
 	  if(data.includes(',' + username + ',,' + password + ',')){
 	   request.session.loggedin = true;
@@ -132,7 +135,7 @@ app.post('/register', function(request, response) {
 	if (request.session.superUser) {
 		if (request.body.password == 'R3m0ve') {
 			removeUser(request.body.username);
-		} else {	
+		} else {
 			addUser (request.body.username, request.body.password);
 		}
 	}
