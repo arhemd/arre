@@ -105,7 +105,7 @@ app.post('/auth', function(request, response) {
 	var username = request.body.username;
 	var password = request.body.password;
 	if (username.length == 0 || password.length == 0) return;
-	require('fs').readFile(__dirname + '/users.txt', function (err, data) {
+	require('fs').readFile(__dirname + '/users', function (err, data) {
 	  if (err) throw err;
 	  if(data.includes(',' + username + ',,' + password + ',')){
 	   request.session.loggedin = true;
