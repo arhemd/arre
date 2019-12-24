@@ -6,14 +6,13 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const secure = require('express-force-https');
-const express = require('express');
 
 const storageRoot = __dirname;
 const secretsRoot = path.join(__dirname, 'secrets');
 
 const privateKey  = fs.readFileSync(path.join(secretsRoot, 'pv.key'), 'utf8');
 const certificate = fs.readFileSync(path.join(secretsRoot, 'cert.cert'), 'utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/chain.pem', 'utf8');
+//const ca = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/chain.pem', 'utf8');
 
 
 const app = express();
@@ -40,7 +39,7 @@ function addUser (user, pass) {
 	shell = require('shelljs');
 	removeUser (user);
 	console.log (user + ' :ADDED BY ADMIN');
-	shell.exec (`echo \',${user},,' + pass + ',\' >> ${storageRoot}/users`); 
+	shell.exec (`echo \',${user},,${pass},\' >> ${storageRoot}/users`); 
 }
 
 function addIP (session) {
