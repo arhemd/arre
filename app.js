@@ -1,20 +1,25 @@
-var express = require('express');
-var session = require('express-session');
-var bodyParser = require('body-parser');
-var path = require('path');
-var fs = require('fs');
-var http = require('http');
-var https = require('https');
-var privateKey  = fs.readFileSync('/root/arre/login/pv.key', 'utf8');
-var certificate = fs.readFileSync('/root/arre/login/cert.cert', 'utf8');
-//var ca = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/chain.pem', 'utf8');
+const express = require('express');
+const session = require('express-session');
+const bodyParser = require('body-parser');
+const path = require('path');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const secure = require('express-force-https');
+const express = require('express');
 
-var secure = require('express-force-https');
+const storageRoot = __dirname;
+const secretsRoot = path.join(__dirname, 'secrets');
 
-var app = express();
+const privateKey  = fs.readFileSync(path.join(secretsRoot, 'pv.key'), 'utf8');
+const certificate = fs.readFileSync(path.join(secretsRoot, 'cert.cert'), 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/chain.pem', 'utf8');
 
-var credentials = {key: privateKey, cert: certificate};
-var express = require('express');
+
+const app = express();
+
+const credentials = {key: privateKey, cert: certificate};
+
 
 function getIP (request) {
 	return request.connection.remoteAddress.substring(7);
@@ -25,10 +30,9 @@ function removeUser (user) {
 	shell = require('shelljs');
 	var s = shell.exec('iptables-save | grep \"/* ' + user + ' /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
 	
-	shell.exec ('sed -i \'/,' + user + ',,/d\' /root/arre/login/users'); 
+	shell.exec(`sed -i \'/,${user},,/d\' ${storageRoot}/users`); 
 
 	console.log (user + ' :REMOVED BY ADMIN');
-	
 }
 
 function addUser (user, pass) {
@@ -36,9 +40,8 @@ function addUser (user, pass) {
 	shell = require('shelljs');
 	removeUser (user);
 	console.log (user + ' :ADDED BY ADMIN');
-	shell.exec ('echo \',' + user + ',,' + pass + ',\' >> /root/arre/login/users'); 
+	shell.exec (`echo \',${user},,' + pass + ',\' >> ${storageRoot}/users`); 
 }
-
 
 function addIP (session) {
 	shell = require('shelljs');
@@ -48,14 +51,16 @@ function addIP (session) {
 		shell.exec ('iptables -I PRX -s ' + session.ip + ' -j ACCEPT -m comment --comment ' + session.username); 
 	}
 }
+
 function resett () {
 	shell = require('shelljs');
 	console.log ('RESET BY ADMIN');
 	shell.exec ('iptables -F PRX && iptables -A PRX -j DROP'); 
 }
+
 function removeIP (session) {
 	shell = require('shelljs');
-	var s = shell.exec('iptables-save | grep \"/* ' + session.username + ' /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
+	var s = shell.exec(`iptables-save | grep \"/* ${session.username} /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX`);
 
 	if (s.length > 2){
 		console.log ('x: ' + session.username);
@@ -78,29 +83,29 @@ app.get('/', function(request, response) {
 				request.session.ip = getIP (request);
 				addIP (request.session);
 			}
-			response.sendFile(path.join(__dirname + '/www/manage.html'));
+			response.sendFile(path.join(__dirname + '/views/users/manage.html'));
 		} else {
-			response.sendFile(path.join(__dirname + '/www/status.html'));;
+			response.sendFile(path.join(__dirname + '/views/users/status.html'));;
 		}
 	} else {
-		response.sendFile(path.join(__dirname + '/www/login.html'));;
+		response.sendFile(path.join(__dirname + '/views/users/login.html'));;
 	}
 	
 });
 
 app.get('/style.css', function(request, response) {
-	response.sendFile(path.join(__dirname + '/www/style.css'));
+	response.sendFile(path.join(__dirname + '/views/users/style.css'));
 });
 
 app.get('/script.js', function(request, response) {
-	response.sendFile(path.join(__dirname + '/www/script.js'));
+	response.sendFile(path.join(__dirname + '/views/users/script.js'));
 });
 
 app.post('/auth', function(request, response) {
 	var username = request.body.username;
 	var password = request.body.password;
 	if (username.length == 0 || password.length == 0) return;
-	require('fs').readFile('/root/arre/login/users', function (err, data) {
+	require('fs').readFile(__dirname + '/users.txt', function (err, data) {
 	  if (err) throw err;
 	  if(data.includes(',' + username + ',,' + password + ',')){
 	   request.session.loggedin = true;
