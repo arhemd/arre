@@ -24,43 +24,65 @@ function getIP (request) {
 	return request.connection.remoteAddress.substring(7);
 }
 
-function removeUser (user) {
-	if (user.length == 0) return;
+function userExists (username) {
+	flag = false;
+	if (username.length == 0) return false;
+	if (require('fs').readFileSync(__dirname + '/users').includes(`,${username},,`)) flag = true;
+	
+	return flag;
+}	
+
+function authCheck (username, password) {
+	flag = false;
+	if (username.length == 0 || password.length == 0) return false;
+	if (require('fs').readFileSync(__dirname + '/users').includes(`,${username},,${password},`)) flag = true;
+	return flag;
+}
+			       
+function isSuperUser (username) {
+	flag = false;
+	if (username.length == 0) return false;
+	if (require('fs').readFileSync(__dirname + '/users').includes(`,,,${username},,,`)) flag = true;
+	return flag;
+}		
+
+function removeUser (user, suser) {
+	if (user.length == 0 || !userExists (user)) return;
 	shell = require('shelljs');
+	
 	var s = shell.exec('iptables-save | grep \"/* ' + user + ' /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
 	
-	shell.exec(`sed -i \'/,${user},,/d\' ${storageRoot}/users`); 
+	shell.exec (`sed -i \'/,${user},,/d\' /root/arre/users`);  
 
-	console.log (user + ' :REMOVED BY ADMIN');
+	console.log (user + ` :REMOVED BY ${suser}`);
 }
 
-function addUser (user, pass) {
+function addUser (user, pass, suser) {
 	if (user.length == 0 || pass.length == 0) return;
 	shell = require('shelljs');
-	removeUser (user);
-	console.log (user + ' :ADDED BY ADMIN');
+	removeUser (user, suser);
+	console.log (user + ` :ADDED BY ${suser}`);
 	shell.exec (`echo \',${user},,${pass},\' >> ${storageRoot}/users`); 
 }
 
 function addIP (session) {
 	shell = require('shelljs');
-	if (!shell.exec('iptables-save', {silent: true}).stdout.includes('-A PRX -s ' + session.ip + '/32 -m comment --comment ' + session.username +  ' -j ACCEPT')) {
+	if (!shell.exec('iptables-save', {silent: true}).stdout.includes('-A PRX -s ' + session.ip + `/32 -m comment --comment ${session.username} -j ACCEPT`)) {
 		
 		console.log (session.username + ': ' + session.ip);
 		shell.exec ('iptables -I PRX -s ' + session.ip + ' -j ACCEPT -m comment --comment ' + session.username); 
 	}
 }
 
-function resett () {
+function resett (suser) {
 	shell = require('shelljs');
-	console.log ('RESET BY ADMIN');
+	console.log (`RESET BY ${suser}`);
 	shell.exec ('iptables -F PRX && iptables -A PRX -j DROP'); 
 }
 
 function removeIP (session) {
 	shell = require('shelljs');
-	var s = shell.exec(`iptables-save | grep \"/* ${session.username} /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX`);
-
+	var s = shell.exec(`iptables-save | grep \"/* ${session.username} /*\"`, {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
 	if (s.length > 2){
 		console.log ('x: ' + session.username);
 		shell.exec (s); 
@@ -104,20 +126,19 @@ app.post('/auth', function(request, response) {
 	var username = request.body.username;
 	var password = request.body.password;
 	if (username.length == 0 || password.length == 0) return;
-	require('fs').readFile(__dirname + '/users', function (err, data) {
-	  if (err) throw err;
-	  if(data.includes(',' + username + ',,' + password + ',')){
+	
+	  if(authCheck(username, password)){
 	   request.session.loggedin = true;
 	   request.session.username = username;
 	   request.session.ip = getIP(request);
 	   request.session.superUser = false;
-	   if (data.includes(',,,' + username + ',,,')) request.session.superUser = true;
+	   if (isSuperUser(username)) request.session.superUser = true;
 	   request.session.secret = username + ':' + getIP (request);
 	   if (!request.session.superUser)removeIP(request.session);
 	   addIP(request.session);
 	  }
 	  response.redirect('/');
-	});
+	
 });
 
 app.post('/signout', function(request, response) {
@@ -129,18 +150,19 @@ app.post('/signout', function(request, response) {
 });
 app.post('/reset', function(request, response) {
 	if (request.session.superUser) {
-		resett();
+		resett(request.session.username);
 		addIP (request.session);
 	}
 	response.redirect('/');
 	
 });
 app.post('/register', function(request, response) {
+	if (isSuperUser(request.body.username)) return;
 	if (request.session.superUser) {
 		if (request.body.password == 'R3m0ve') {
-			removeUser(request.body.username);
+			removeUser(request.body.username, request.session.username);
 		} else {
-			addUser (request.body.username, request.body.password);
+			addUser (request.body.username, request.body.password, request.session.username);
 		}
 	}
 	response.redirect('/');
