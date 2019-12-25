@@ -10,14 +10,14 @@ const secure = require('express-force-https');
 const storageRoot = __dirname;
 const secretsRoot = path.join(__dirname, 'secrets');
 
-const privateKey  = fs.readFileSync(path.join(secretsRoot, 'pv.key'), 'utf8');
-const certificate = fs.readFileSync(path.join(secretsRoot, 'cert.cert'), 'utf8');
-//const ca = fs.readFileSync('/etc/letsencrypt/live/shargh.sesajad.me/chain.pem', 'utf8');
+const privateKey  = fs.readFileSync(path.join(secretsRoot, 'privkey.pem'), 'utf8');
+const certificate = fs.readFileSync(path.join(secretsRoot, 'cert.pem'), 'utf8');
+const ca = fs.readFileSync(path.join(secretsRoot, 'chain.pem'), 'utf8');
 
 
 const app = express();
 
-const credentials = {key: privateKey, cert: certificate};
+const credentials = {key: privateKey, cert: certificate, ca: ca};
 
 
 function getIP (request) {
