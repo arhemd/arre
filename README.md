@@ -1,7 +1,11 @@
 # Arre
 
 ## Etymology
-*Arre* is named after [](this video)
+*Arre* is named after [https://www.aparat.com/v/Hugph/ارّه_و_انگلیس!](this video)
 
 ## How to run
-I don't know!
+1. clone. obviously
+
+2. put cert files in `secrets/`
+
+3. to be completed
