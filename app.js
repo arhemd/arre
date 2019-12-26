@@ -8,9 +8,11 @@ const https = require('https');
 const secure = require('express-force-https');
 const shell = require('shelljs');
 
-
 var storageRoot = path.dirname(process.execPath);
 if (storageRoot.endsWith('bin')) storageRoot = __dirname;
+
+var usersPath = path.join(storageRoot, 'users');
+if (!fs.existsSync(usersPath)) usersPath = path.join(storageRoot, 'users-sample');
 
 var secretsRoot = path.join(storageRoot, 'secrets');
 if (!fs.existsSync(path.join(secretsRoot, 'privkey.pem'))) secretsRoot = path.join(storageRoot, 'secrets-sample');
@@ -38,7 +40,7 @@ function getIP (request) {
 function userExists (username) {
 	flag = false;
 	if (username.length == 0) return false;
-	if (require('fs').readFileSync(path.join(storageRoot,  'users')).includes(`,${username},,`)) flag = true;
+	if (require('fs').readFileSync(usersPath).includes(`,${username},,`)) flag = true;
 	
 	return flag;
 }	
@@ -46,14 +48,14 @@ function userExists (username) {
 function authCheck (username, password) {
 	flag = false;
 	if (username.length == 0 || password.length == 0) return false;
-	if (require('fs').readFileSync(path.join(storageRoot,  'users')).includes(`,${username},,${password},`)) flag = true;
+	if (require('fs').readFileSync(usersPath).includes(`,${username},,${password},`)) flag = true;
 	return flag;
 }
 			       
 function isSuperUser (username) {
 	flag = false;
 	if (username.length == 0) return false;
-	if (require('fs').readFileSync(path.join(storageRoot,  'users')).includes(`,,,${username},,,`)) flag = true;
+	if (require('fs').readFileSync(usersPath).includes(`,,,${username},,,`)) flag = true;
 	return flag;
 }		
 
@@ -63,7 +65,7 @@ function removeUser (user, suser) {
 	
 	var s = shell.exec('iptables-save | grep \"/* ' + user + ' /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
 	
-	shell.exec (`sed -i \'/,${user},,/d\' /root/arre/users`);  
+	shell.exec (`sed -i \'/,${user},,/d\' ' + usersPath);  
 
 	console.log (user + ` :REMOVED BY ${suser}`);
 }
@@ -73,7 +75,7 @@ function addUser (user, pass, suser) {
 	
 	removeUser (user, suser);
 	console.log (user + ` :ADDED BY ${suser}`);
-	shell.exec (`echo \',${user},,${pass},\' >> ${storageRoot}/users`); 
+	shell.exec (`echo \',${user},,${pass},\' >> usersPath`); 
 }
 
 function addIP (session) {
