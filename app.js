@@ -6,18 +6,29 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const secure = require('express-force-https');
+const shell = require('shelljs');
 
-const storageRoot = __dirname;
-const secretsRoot = path.join(__dirname, 'secrets');
+
+var storageRoot = path.dirname(process.execPath);
+if (storageRoot.endsWith('bin')) storageRoot = __dirname;
+
+var secretsRoot = path.join(storageRoot, 'secrets');
+if (!fs.existsSync(path.join(secretsRoot, 'privkey.pem'))) secretsRoot = path.join(storageRoot, 'secrets-sample');
+
 
 const privateKey  = fs.readFileSync(path.join(secretsRoot, 'privkey.pem'), 'utf8');
 const certificate = fs.readFileSync(path.join(secretsRoot, 'cert.pem'), 'utf8');
-const ca = fs.readFileSync(path.join(secretsRoot, 'chain.pem'), 'utf8');
+var ca;
+var credentials = {key: privateKey, cert: certificate};
+if (fs.existsSync(path.join(secretsRoot, 'chain.pem')))  {
+	ca = fs.readFileSync(path.join(secretsRoot, 'chain.pem'), 'utf8');
+	credentials = {key: privateKey, cert: certificate, ca: ca};
+}
 
 
 const app = express();
 
-const credentials = {key: privateKey, cert: certificate, ca: ca};
+
 
 
 function getIP (request) {
@@ -27,7 +38,7 @@ function getIP (request) {
 function userExists (username) {
 	flag = false;
 	if (username.length == 0) return false;
-	if (require('fs').readFileSync(__dirname + '/users').includes(`,${username},,`)) flag = true;
+	if (require('fs').readFileSync(path.join(storageRoot,  'users')).includes(`,${username},,`)) flag = true;
 	
 	return flag;
 }	
@@ -35,20 +46,20 @@ function userExists (username) {
 function authCheck (username, password) {
 	flag = false;
 	if (username.length == 0 || password.length == 0) return false;
-	if (require('fs').readFileSync(__dirname + '/users').includes(`,${username},,${password},`)) flag = true;
+	if (require('fs').readFileSync(path.join(storageRoot,  'users')).includes(`,${username},,${password},`)) flag = true;
 	return flag;
 }
 			       
 function isSuperUser (username) {
 	flag = false;
 	if (username.length == 0) return false;
-	if (require('fs').readFileSync(__dirname + '/users').includes(`,,,${username},,,`)) flag = true;
+	if (require('fs').readFileSync(path.join(storageRoot,  'users')).includes(`,,,${username},,,`)) flag = true;
 	return flag;
 }		
 
 function removeUser (user, suser) {
 	if (user.length == 0 || !userExists (user)) return;
-	shell = require('shelljs');
+	
 	
 	var s = shell.exec('iptables-save | grep \"/* ' + user + ' /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
 	
@@ -59,14 +70,14 @@ function removeUser (user, suser) {
 
 function addUser (user, pass, suser) {
 	if (user.length == 0 || pass.length == 0) return;
-	shell = require('shelljs');
+	
 	removeUser (user, suser);
 	console.log (user + ` :ADDED BY ${suser}`);
 	shell.exec (`echo \',${user},,${pass},\' >> ${storageRoot}/users`); 
 }
 
 function addIP (session) {
-	shell = require('shelljs');
+	
 	if (!shell.exec('iptables-save', {silent: true}).stdout.includes('-A PRX -s ' + session.ip + `/32 -m comment --comment ${session.username} -j ACCEPT`)) {
 		
 		console.log (session.username + ': ' + session.ip);
@@ -75,13 +86,13 @@ function addIP (session) {
 }
 
 function resett (suser) {
-	shell = require('shelljs');
+	
 	console.log (`RESET BY ${suser}`);
 	shell.exec ('iptables -F PRX && iptables -A PRX -j DROP'); 
 }
 
 function removeIP (session) {
-	shell = require('shelljs');
+	
 	var s = shell.exec(`iptables-save | grep \"/* ${session.username} /*\"`, {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
 	if (s.length > 2){
 		console.log ('x: ' + session.username);
@@ -104,22 +115,22 @@ app.get('/', function(request, response) {
 				request.session.ip = getIP (request);
 				addIP (request.session);
 			}
-			response.sendFile(path.join(__dirname + '/views/users/manage.html'));
+			response.sendFile(path.join(storageRoot + '/views/users/manage.html'));
 		} else {
-			response.sendFile(path.join(__dirname + '/views/users/status.html'));;
+			response.sendFile(path.join(storageRoot + '/views/users/status.html'));;
 		}
 	} else {
-		response.sendFile(path.join(__dirname + '/views/users/login.html'));;
+		response.sendFile(path.join(storageRoot + '/views/users/login.html'));;
 	}
 	
 });
 
 app.get('/style.css', function(request, response) {
-	response.sendFile(path.join(__dirname + '/views/users/style.css'));
+	response.sendFile(path.join(storageRoot + '/views/users/style.css'));
 });
 
 app.get('/script.js', function(request, response) {
-	response.sendFile(path.join(__dirname + '/views/users/script.js'));
+	response.sendFile(path.join(storageRoot + '/views/users/script.js'));
 });
 
 app.post('/auth', function(request, response) {
@@ -175,3 +186,4 @@ var httpServer = http.createServer(redirApp);
 var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(443);
 httpServer.listen(80);
+
