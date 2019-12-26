@@ -65,7 +65,7 @@ function removeUser (user, suser) {
 	
 	var s = shell.exec('iptables-save | grep \"/* ' + user + ' /*\"', {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
 	
-	shell.exec (`sed -i \'/,${user},,/d\' ' + usersPath);  
+	shell.exec (`sed -i \'/,${user},,/d\' ${usersPath}`);  
 
 	console.log (user + ` :REMOVED BY ${suser}`);
 }
@@ -188,4 +188,5 @@ var httpServer = http.createServer(redirApp);
 var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(443);
 httpServer.listen(80);
+
 
