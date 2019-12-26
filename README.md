@@ -15,7 +15,7 @@ cd /root
 git clone https://github.com/MehradDadar/arre.git
 ```
 
-2. Create `/root/arre/users` file and initialize (use sample-users in order to understand the template
+2. Create `/root/arre/users` file and initialize (use users-sample in order to understand the template)
 ```
 vim /root/arre/users
 ``` 
@@ -41,7 +41,7 @@ cd /root
 git clone https://github.com/MehradDadar/arre.git
 ```
 
-2. Create `/root/arre/users` file and initialize (use sample-users in order to understand the template
+2. Create `/root/arre/users` file and initialize (use users-sample in order to understand the template)
 ```
 vim /root/arre/users
 ``` 
