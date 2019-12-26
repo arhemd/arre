@@ -17,4 +17,3 @@ npm install shelljs
 npm install forever -g
 apt-get install git -y
 git clone https://github.com/MehradDadar/arre.git
-forever start -a -o /root/arre/login/log /root/arre/app.js
