@@ -75,7 +75,7 @@ function addUser (user, pass, suser) {
 	
 	removeUser (user, suser);
 	console.log (user + ` :ADDED BY ${suser}`);
-	shell.exec (`echo \',${user},,${pass},\' >> usersPath`); 
+	shell.exec (`echo \',${user},,${pass},\' >> ${usersPath}`); 
 }
 
 function addIP (session) {

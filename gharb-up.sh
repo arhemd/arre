@@ -15,5 +15,3 @@ npm install express-session
 npm install express-force-https
 npm install shelljs
 npm install forever -g
-apt-get install git -y
-git clone https://github.com/MehradDadar/arre.git

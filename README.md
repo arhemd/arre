@@ -12,7 +12,7 @@ An executable file is provided to avoid installing the required npm packages and
 1. Clone.
 ```
 cd /root
-git clone https://github.com/MehradDadar/arre.git
+git clone https://github.com/arhemd/arre.git
 ```
 
 2. Create `/root/arre/users` file and initialize (use users-sample in order to understand the template)
@@ -38,7 +38,7 @@ bash /root/arre/iptables-setup.sh
 1. Clone.
 ```
 cd /root
-git clone https://github.com/MehradDadar/arre.git
+git clone https://github.com/arhemd/arre.git
 ```
 
 2. Create `/root/arre/users` file and initialize (use users-sample in order to understand the template)
