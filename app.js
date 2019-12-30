@@ -102,10 +102,14 @@ function removeIP (session) {
 	}
 }
 
+
 app.use(session({
 	secret: 'secret',
 	resave: true,
-	saveUninitialized: false
+	saveUninitialized: false,
+	cookie : {
+        maxAge: 1000* 60 * 60 *24 * 365
+    }
 }));
 app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());

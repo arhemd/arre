@@ -5,7 +5,7 @@
 ### Linux ###
 *~
 log
-secret/*
+secret/**
 !secrets/readme.txt
 users
 
