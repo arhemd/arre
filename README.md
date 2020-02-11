@@ -1,7 +1,7 @@
 # Arre
 
 ## Etymology
-*Arre* is named after [https://www.aparat.com/v/Hugph/ارّه_و_انگلیس!](this video)
+*Arre* is named after [this video](https://www.aparat.com/v/Hugph/ارّه_و_انگلیس!)
 
 ## How to run
 
@@ -30,7 +30,7 @@ bash /root/arre/iptables-setup.sh
 
 5. Run `app` in the background and enjoy!
 ```
-/root/arre/app& >> /root/arre/log
+/root/arre/app & >> /root/arre/log
 ```
 
 ### Method 2: For Developers
