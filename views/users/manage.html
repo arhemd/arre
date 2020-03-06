@@ -4,38 +4,50 @@
   <meta charset="UTF-8">
   <title>Status</title>
   <link rel="stylesheet" href="./style.css">
-
+	
 </head>
 <body>
 <!-- partial:index.partial.html -->
 <div class="login-page">
   <div class="form">
- 
-    <form autocomplete = "off" class = "register-form" action="register" method="post">
-      <input autocomplete="off" type="text" name="username" placeholder="username"/ required>
-      <input autocomplete="off" type="password" name="password" placeholder="password"/ required>
-      <button class="button">create</button>
-	  
-	</form>
-	<form class = "register-form" action = "reset" method = "post">
-	<p><button class = "buttonr">Reset</button></p>
-	  
-      
-    </form>
-	<form class = "register-form">
-	<p class="message"> <a href="#">Back</a></p>
-	</form>
-	
-
-   <form class="login-form" action="signout" method="post">
-	 <button class = "button">Sign Out</button> 
-      <p class="message"><a href="#">Manage</a></p>
-	  
-    </form>
+	<div class="register-form">
+		<form autocomplete = "off" action="register" method="post">
+		  <input autocomplete="off" type="text" name="username" placeholder="username"/ required>
+		  <input autocomplete="off" type="password" name="password" placeholder="password"/ required>
+		  <button class="button">create</button>
+		  
+		</form>
+		<form action = "reset" method = "post">
+		<p><button class = "buttonr">Reset</button></p>
+		  
+		  
+		</form>
+		<p class="message users"> <a href="#">Users</a></p>
+		<p class="message back"> <a href="#">Back</a></p>
+	</div>
+	<div class="login-form">
+	   <form action="signout" method="post">
+		 <button class = "button">Sign Out</button> 
+		  <p class="message manage"><a href="#">Manage</a></p>
+		  
+		</form>
+	</div>
+	<div class="user">
+		<form autocomplete = "off" action="remove" method="post" id="remove">
+		  <select name="username" form="remove" id="rmvlist" required>
+					<option disabled selected value></option>
+				</select><p> </p>
+				<button class = "buttonr">Remove</button>
+		  
+			<p class="message users"> <a href="#">Back</a></p>
+		</form>
+		
+	</div>
   </div>
 </div>
 <!-- partial -->
+	
   <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script><script  src="./script.js"></script>
-
+	<script>setUserList()</script>
 </body>
 </html>

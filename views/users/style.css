@@ -71,7 +71,19 @@
   color: #4CAF50;
   text-decoration: none;
 }
+.form .messagee {
+  margin: 15px 0 0;
+  color: #b3b3b3;
+  font-size: 12px;
+}
+.form .messagee a {
+  color: #4CAF50;
+  text-decoration: none;
+}
 .form .register-form {
+  display: none;
+}
+.form .user {
   display: none;
 }
 .container {
@@ -107,6 +119,7 @@
 .container .info span .fa {
   color: #EF3B3A;
 }
+
 body {
   background: #76b852; /* fallback for old browsers */
   background: -webkit-linear-gradient(right, #76b852, #8DC26F);

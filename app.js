@@ -37,6 +37,20 @@ function getIP (request) {
 	return request.connection.remoteAddress.substring(7);
 }
 
+function getUserList(){
+	var usArr = fs.readFileSync(usersPath).toString().split('\n');
+	var tempArr = []
+	for (i = 0; i < usArr.length; i++) {
+		if (usArr[i].startsWith(',,,')) continue;
+		if (usArr[i].startsWith(',')){
+			var usr = usArr[i].substring(1, usArr[i].indexOf(',,'))
+			if (!isSuperUser(usr))tempArr.push(usr);
+		}
+	}
+	return tempArr;
+}
+
+
 function userExists (username) {
 	flag = false;
 	if (username.length == 0) return false;
@@ -138,6 +152,12 @@ app.get('/style.css', function(request, response) {
 app.get('/script.js', function(request, response) {
 	response.sendFile(path.join(storageRoot + '/views/users/script.js'));
 });
+app.get('/user_list', function(request, response) {
+	if (request.session.superUser) {
+		response.send(getUserList().toString());
+	}
+});
+
 
 app.post('/auth', function(request, response) {
 	var username = request.body.username;
@@ -176,11 +196,15 @@ app.post('/reset', function(request, response) {
 app.post('/register', function(request, response) {
 	if (isSuperUser(request.body.username)) return;
 	if (request.session.superUser) {
-		if (request.body.password == 'R3m0ve') {
-			removeUser(request.body.username, request.session.username);
-		} else {
-			addUser (request.body.username, request.body.password, request.session.username);
-		}
+		addUser (request.body.username, request.body.password, request.session.username);
+	}
+	response.redirect('/');
+	
+});
+app.post('/remove', function(request, response) {
+	if (isSuperUser(request.body.username)) return;
+	if (request.session.superUser) {
+		removeUser(request.body.username, request.session.username);
 	}
 	response.redirect('/');
 	
