@@ -217,7 +217,10 @@ app.get('/', function(request, response) {
 			}
 			response.sendFile(path.join(storageRoot + '/views/users/manage.html'));
 		} else {
-			addIP(request.session);
+			if (request.session.ip != getIP (request)) {
+				request.session.ip = getIP (request);
+				addIP (request.session);
+			}
 			response.sendFile(path.join(storageRoot + '/views/users/status.html'));;
 		}
 	} else {
