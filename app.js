@@ -162,10 +162,10 @@ function addIP (session) {
 			var temp = "";
 			if (sArr.length > 2){
 				for (var i = 0; i < sArr.length - 2; i++){
-					s += sArr[sArr.length - 1 - i];
+					temp += sArr[sArr.length - 1 - i] + '\n';
 				}
 			}
-			shell.exec (s);
+			shell.exec (temp);
 		}
 	}
 	
@@ -217,6 +217,7 @@ app.get('/', function(request, response) {
 			}
 			response.sendFile(path.join(storageRoot + '/views/users/manage.html'));
 		} else {
+			addIP(request.session);
 			response.sendFile(path.join(storageRoot + '/views/users/status.html'));;
 		}
 	} else {
