@@ -7,11 +7,13 @@ const http = require('http');
 const https = require('https');
 const secure = require('express-force-https');
 const shell = require('shelljs');
+const schedule = require('node-schedule');
 
 var storageRoot = path.dirname(process.execPath);
 if (storageRoot.endsWith('bin')) storageRoot = __dirname;
 
 var usersPath = path.join(storageRoot, 'users');
+var expPath = path.join(storageRoot, 'users_exp');
 if (!fs.existsSync(usersPath)) usersPath = path.join(storageRoot, 'users-sample');
 
 var secretsRoot = path.join(storageRoot, 'secrets');
@@ -30,7 +32,37 @@ if (fs.existsSync(path.join(secretsRoot, 'chain.pem')))  {
 
 const app = express();
 
+function expCheck(){
+	var expArr = fs.readFileSync(expPath).toString().split('\n');
+	var today = getDay();
+	for (var i=0; i < expArr.length; i++){
+		var temp = expArr[i].split(',')
+		if (temp == null || temp.length < 3) continue;
+		if (parseInt(temp[1]) + parseInt(temp[2]) < today){
+			removeUserIP(temp[0]);
+		}
+	}
+}
 
+function userExpCheck(username){
+	var expArr = fs.readFileSync(expPath).toString().split('\n');
+	var today = getDay();
+	for (var i=0; i < expArr.length; i++){
+		var temp = expArr[i].split(',')
+		if (temp == null || temp.length < 3) continue;
+		if (temp[0] != username) continue;
+		if (parseInt(temp[1]) + parseInt(temp[2]) < today){
+			return true;
+		} else {
+			return false;
+		}
+	}
+	return false;
+}
+
+function getDay(){
+	return Math.floor((Date.now()/1000/3600+3.5)/24);
+}
 
 
 function getIP (request) {
@@ -40,7 +72,7 @@ function getIP (request) {
 function getUserList(){
 	var usArr = fs.readFileSync(usersPath).toString().split('\n');
 	var tempArr = []
-	for (i = 0; i < usArr.length; i++) {
+	for (var i = 0; i < usArr.length; i++) {
 		if (usArr[i].startsWith(',,,')) continue;
 		if (usArr[i].startsWith(',')){
 			var usr = usArr[i].substring(1, usArr[i].indexOf(',,'))
@@ -52,7 +84,7 @@ function getUserList(){
 
 
 function userExists (username) {
-	flag = false;
+	var flag = false;
 	if (username.length == 0) return false;
 	if (require('fs').readFileSync(usersPath).includes(`,${username},,`)) flag = true;
 	
@@ -60,18 +92,42 @@ function userExists (username) {
 }	
 
 function authCheck (username, password) {
-	flag = false;
+	var flag = false;
 	if (username.length == 0 || password.length == 0) return false;
-	if (require('fs').readFileSync(usersPath).includes(`,${username},,${password},`)) flag = true;
+	if (fs.readFileSync(usersPath).includes(`,${username},,${password},`)) flag = true;
 	return flag;
 }
 			       
 function isSuperUser (username) {
-	flag = false;
+	var flag = false;
 	if (username.length == 0) return false;
-	if (require('fs').readFileSync(usersPath).includes(`,,,${username},,,`)) flag = true;
+	if (fs.readFileSync(usersPath).includes(`,,,${username},,,`)) flag = true;
 	return flag;
-}		
+}
+
+function renewExp(username, days) {
+	var expArr = fs.readFileSync(expPath).toString().split('\n');
+	var today = getDay();
+	var start = 0;
+	var prevDays = 0;
+	for (var i = 0; i < expArr.length; i++){
+		if (expArr[i].length <2) continue;
+		var temp = expArr[i].split(',')
+		if (temp[0] == username) {
+			start = parseInt (temp[1]);
+			prevDays = parseInt(temp[2]);
+		}
+	}
+	if (today + days < start + prevDays + days) {
+		today = start;
+		days += prevDays;
+	}
+	
+	var s = username + ',' + today + ',' + days;
+	
+	shell.exec (`sed -i \'/${username},/d\' ${expPath}`);
+	shell.exec (`echo \'${s}\' >> ${expPath}`);
+}
 
 function removeUser (user, suser) {
 	if (user.length == 0 || !userExists (user)) return;
@@ -94,11 +150,27 @@ function addUser (user, pass, suser) {
 
 function addIP (session) {
 	
-	if (!shell.exec('iptables-save', {silent: true}).stdout.includes('-A PRX -s ' + session.ip + `/32 -m comment --comment ${session.username} -j ACCEPT`)) {
-		
-		console.log (session.username + ': ' + session.ip);
-		shell.exec ('iptables -I PRX -s ' + session.ip + ' -j ACCEPT -m comment --comment ' + session.username); 
+	if (!session.superUser && userExpCheck(session.username)) return;
+	
+	if (shell.exec('iptables-save', {silent: true}).stdout.includes('-A PRX -s ' + session.ip + `/32 -m comment --comment ${session.username} -j ACCEPT`)) return;
+	
+	if (!session.superUser){
+		var s = shell.exec(`iptables-save | grep \"/* ${session.username} /*\"`, {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
+		if (s.length > 2){
+			
+			var sArr = s.split('\n');
+			var temp = "";
+			if (sArr.length > 2){
+				for (var i = 0; i < sArr.length - 2; i++){
+					s += sArr[sArr.length - 1 - i];
+				}
+			}
+			shell.exec (s);
+		}
 	}
+	
+	console.log (session.username + ': ' + session.ip);
+	shell.exec ('iptables -I PRX -s ' + session.ip + ' -j ACCEPT -m comment --comment ' + session.username); 
 }
 
 function resett (suser) {
@@ -116,6 +188,14 @@ function removeIP (session) {
 	}
 }
 
+function removeUserIP (username) {
+	
+	var s = shell.exec(`iptables-save | grep \"/* ${username} /*\"`, {silent: true}).stdout.replace(/-A PRX/g, 'iptables -D PRX');
+	if (s.length > 2){
+		console.log ('x: ' + username);
+		shell.exec (s); 
+	}
+}
 
 app.use(session({
 	secret: 'secret',
@@ -171,7 +251,7 @@ app.post('/auth', function(request, response) {
 	   request.session.superUser = false;
 	   if (isSuperUser(username)) request.session.superUser = true;
 	   request.session.secret = username + ':' + getIP (request);
-	   if (!request.session.superUser)removeIP(request.session);
+	   //if (!request.session.superUser)removeIP(request.session);
 	   addIP(request.session);
 	  }
 	  response.redirect('/');
@@ -201,14 +281,15 @@ app.post('/register', function(request, response) {
 	response.redirect('/');
 	
 });
+
 app.post('/remove', function(request, response) {
 	if (isSuperUser(request.body.username)) return;
 	if (request.session.superUser) {
 		removeUser(request.body.username, request.session.username);
 	}
 	response.redirect('/');
-	
 });
+
 let redirApp = express();
 redirApp.use(secure);
 
@@ -217,4 +298,11 @@ var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(443);
 httpServer.listen(80);
 
+schedule.scheduleJob('* * 8 * * *', ()=>{
+	expCheck();
+});
 
+schedule.scheduleJob('* * * 1 * *', ()=>{
+	console.log ('AUTOMATIC RESET');
+	shell.exec ('iptables -F PRX && iptables -A PRX -j DROP'); 
+});
