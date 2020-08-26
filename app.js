@@ -295,12 +295,12 @@ app.post('/remove', function(request, response) {
 });
 
 let redirApp = express();
-redirApp.use(secure);
+//redirApp.use(secure);
 
-var httpServer = http.createServer(redirApp);
-var httpsServer = https.createServer(credentials, app);
-httpsServer.listen(443);
-httpServer.listen(80);
+var httpServer = http.createServer(app);
+//var httpsServer = https.createServer(credentials, app);
+//httpsServer.listen(443);
+httpServer.listen(8080);
 
 schedule.scheduleJob('* * 8 * * *', ()=>{
 	expCheck();
